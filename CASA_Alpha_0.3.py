@@ -4,7 +4,7 @@ Spyder Editor
 
 @author: tom
 """
-version = "CASA_alpha 0.3"
+version = "CASA_alpha 0.3?"
 
 # ==============================================================================
 # Iimported classes for program
