@@ -4,7 +4,7 @@ Spyder Editor
 
 @author: tom
 """
-version = "CASA_alpha 0.3?"
+version = "CASA_alpha 0.3"
 
 # ==============================================================================
 # Iimported classes for program
@@ -272,27 +272,30 @@ class CASAgui:
 
 
 
-        #Display Labels--------------
+        # ------------Display Labels--------------
         #
         dollar_labels =[]
-        for i in range(0, weights_factors.__len__()):
-            curr_label = Label(fg=font_color, background=background_color)
-            unit = price_factor_untis[i]
+        if sum(weights_factors) != 0:
+            # only calculate labels if they have been moved
+            for i in range(0, weights_factors.__len__()):
+                curr_label = Label(fg=font_color, background=background_color)
+                unit = price_factor_untis[i]
 
-            if unit:
-                # if units exist print them
-                label_text = " = $" + '{0:,.2f}'.format((weightedCalc(good_data[i], weights_factors[i])), 2) + "/" + unit
-            else:
-                #else dont print anything for units
-                label_text = " = $" + '{0:,.2f}'.format((weightedCalc(good_data[i], weights_factors[i])), 2)
+                if unit:
+                    # if units exist print them
+                    label_text = " = $" + '{0:,.2f}'.format((weightedCalc(good_data[i], weights_factors[i])),
+                                                            2) + "/" + unit
+                else:
+                    # else dont print anything for units
+                    label_text = " = $" + '{0:,.2f}'.format((weightedCalc(good_data[i], weights_factors[i])), 2)
 
-            curr_label.config(text=label_text)
-            curr_label.grid(column=1, row=7+i)
-            dollar_labels.append(curr_label)
+                curr_label.config(text=label_text)
+                curr_label.grid(column=1, row=7 + i)
+                dollar_labels.append(curr_label)
 
-        close_p_label = Label(text=" = $" + '{0:,.2f}'.format(close_p_average, 2), fg=font_color,
-                              background=background_color)
-        close_p_label.grid(column=1, row=13)
+            close_p_label = Label(text=" = $" + '{0:,.2f}'.format(close_p_average, 2), fg=font_color,
+                                  background=background_color)
+            close_p_label.grid(column=1, row=13)
 
 
 
@@ -351,7 +354,7 @@ class CASAgui:
                  label={'', "Calcuated Appraisal Value"})
         plt.xticks(price_bins, price_bins_label)
         plt.legend()
-        # plt.savefig('plot1.jpg') # TODO remove or supress this
+        # plt.savefig('plot1.jpg') #  remove or supress this
 
 
         # ----subplot for ACRES
@@ -388,7 +391,7 @@ class CASAgui:
         plt.ylabel('Properties')
         plt.hist(acres, bins=acre_bins, color='b')
         plt.xticks(acre_bins)
-        #plt.savefig('plot2.jpg') # TODO remove this/ supress
+        #plt.savefig('plot2.jpg') # remove this/ supress
 
         ## Setup for GLA Distribution
         square_feet_step = max(square_feet) / 10.0
@@ -409,7 +412,7 @@ class CASAgui:
         plt.ylabel('Properties')
         plt.hist(square_feet, bins=square_feet_bins, color='r')
         plt.xticks(square_feet_bins)
-        #plt.savefig('plot3.jpg')  # TODO remove or supress this
+        #plt.savefig('plot3.jpg')  #  remove or supress this
 
 
 
@@ -442,10 +445,10 @@ class CASAgui:
 
         ## Show figure
         fig.tight_layout()
-        fig.set_size_inches(w=8.5, h=8.5)  # this portable? Need to make window
+        fig.set_size_inches(w=11, h=8.5)  # this portable? Need to make window
         # big so the text converts to pdf on a good scale
+        # These numbers were arrived at by trial and error, definitely not best solution
         # TODO make this portable/ not hardcoded
-
 
         # Make full screen so text prints to pdf in right format
         # mng = plt.get_current_fig_manager()
@@ -491,9 +494,6 @@ def save2pdf(figure, button):
         fill_html_template()
 
         #3 convert html to pdf and save to pdf_name TODO
-
-
-
 
 
         button.config(text='Sucess!')  # just to stop people (aileen from saving like 100 copies
