@@ -271,6 +271,9 @@ class CASAgui:
 
         good_data =[ garage, bathrooms, bedrooms, acres, square_feet, fireplaces]#this line is no bueno, hopefully we
         # Can make this more flexible
+
+
+
         #Display Labels--------------
         #
         dollar_labels =[]
@@ -316,7 +319,7 @@ class CASAgui:
 
         #  Report will create all charts and graphs and organize them in a pdf file
         # ==============================================================================
-
+        # TODO Most of this is hardcoded in, anyway to make more flexible?
         # Plot figure with subplots of different sizes
         fig = plt.figure(1)
         # set up subplot grid
@@ -351,7 +354,10 @@ class CASAgui:
                  label={'', "Calcuated Appraisal Value"})
         plt.xticks(price_bins, price_bins_label)
         plt.legend()
+        plt.savefig('plot1.jpg') # TODO remove or supress this
 
+
+        #subplot for ACRES
         # again going to "prettify" this data to be resolved to either multiples of .1 or .25 of an acre
         num_of_acre_bins = 10
         acre_step_divide = max(acres) / num_of_acre_bins
@@ -374,7 +380,7 @@ class CASAgui:
             acre_bins.append(acre_step * i)
             i = i + 1
 
-        print(acre_bins)
+        #print(acre_bins)
         ## small subplot 1
         plt.subplot2grid((3, 4), (0, 2), colspan=2)
         # plt.locator_params(axis='x', nbins=5)
@@ -384,6 +390,7 @@ class CASAgui:
         plt.ylabel('Properties')
         plt.hist(acres, bins=acre_bins, color='b')
         plt.xticks(acre_bins)
+        plt.savefig('plot2.jpg') # TODO remove this/ supress
 
         ## Setup for GLA Distribution
         square_feet_step = max(square_feet) / 10.0
@@ -403,6 +410,9 @@ class CASAgui:
         plt.ylabel('Properties')
         plt.hist(square_feet, bins=square_feet_bins, color='r')
         plt.xticks(square_feet_bins)
+        plt.savefig('plot3.jpg')  # TODO remove or supress this
+
+
 
         ## Setup data for  AGE DISTRB plot
         age_step = max(age) / 10.0
@@ -427,6 +437,8 @@ class CASAgui:
         plt.ylabel('Properties')
         plt.hist(age, bins=age_bins, color='g')
         plt.xticks(age_bins)
+        plt.savefig('plot4.jpg')  # TODO remove or supress this
+
 
         ## Show figure
         fig.tight_layout()
