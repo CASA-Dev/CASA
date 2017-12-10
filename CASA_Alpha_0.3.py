@@ -4,7 +4,7 @@ Spyder Editor
 
 @author: tom
 """
-version = "CASA_alpha 0.3?"
+version = "CASA_alpha 0.3"
 
 # ==============================================================================
 # Iimported classes for program
@@ -17,7 +17,8 @@ from tkinter.filedialog import asksaveasfilename
 import tkinter
 from tkinter import Tk
 import matplotlib
-
+import os
+from jinja2 import Template
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg  # , NavigationToolbar2TkAgg
@@ -40,7 +41,7 @@ trough_color = "green"
 border_color = "green"
 
 # ==============================================================================
-# Predefined global varriables
+# Predefined global variables
 # ==============================================================================
 file_import = ""
 price_factors_names= ['Garage', 'Bathrooms', 'Bedrooms', 'Acres', 'Square Feet', 'Fireplaces'] #these are the variables
@@ -48,7 +49,7 @@ price_factors_names= ['Garage', 'Bathrooms', 'Bedrooms', 'Acres', 'Square Feet',
 #weighted value of the Garage is in position 0
 price_factor_untis=['', '', '', 'acres', 'sqft', '']
 weights_factors = np.zeros(price_factors_names.__len__())
-#weighted_close_p = 0 #TODO what the hell are these used for ?    Turns out nothing
+# weighted_close_p = 0 # TODO what the hell are these used for ?    Turns out nothing
 weighted_total =  np.sum(weights_factors)
 close_p = []
 garage = []
@@ -100,7 +101,7 @@ class CASAgui:
         self.label = Label(master, text=file_import, fg=font_color, background=background_color)
         self.label.grid(columnspan=5, row=4)
 
-        # ==============================================================================
+    # ==============================================================================
 
     # Once "file" button is clicked, open file explorer to choose file, make sliding
     # scales visible and change name of file button to "change file"
@@ -124,10 +125,7 @@ class CASAgui:
                                  background=background_color, font=("Helvetica", 17))
         self.labelScales.grid(column=0, row=6)
 
-
-
-
-        #------Slider Construction
+        #------Slider Construction---------
 
         # alright lets rewrite this scale thing to be neat !
         # - use dictionary and unpack using ** to make configs identical
@@ -271,27 +269,33 @@ class CASAgui:
 
         good_data =[ garage, bathrooms, bedrooms, acres, square_feet, fireplaces]#this line is no bueno, hopefully we
         # Can make this more flexible
-        #Display Labels--------------
+
+
+
+        # ------------Display Labels--------------
         #
         dollar_labels =[]
-        for i in range(0, weights_factors.__len__()):
-            curr_label = Label(fg=font_color, background=background_color)
-            unit = price_factor_untis[i]
+        if sum(weights_factors) != 0:
+            # only calculate labels if they have been moved
+            for i in range(0, weights_factors.__len__()):
+                curr_label = Label(fg=font_color, background=background_color)
+                unit = price_factor_untis[i]
 
-            if unit:
-                # if units exist print them
-                label_text = " = $" + '{0:,.2f}'.format((weightedCalc(good_data[i], weights_factors[i])), 2) + "/" + unit
-            else:
-                #else dont print anything for units
-                label_text = " = $" + '{0:,.2f}'.format((weightedCalc(good_data[i], weights_factors[i])), 2)
+                if unit:
+                    # if units exist print them
+                    label_text = " = $" + '{0:,.2f}'.format((weightedCalc(good_data[i], weights_factors[i])),
+                                                            2) + "/" + unit
+                else:
+                    # else dont print anything for units
+                    label_text = " = $" + '{0:,.2f}'.format((weightedCalc(good_data[i], weights_factors[i])), 2)
 
-            curr_label.config(text=label_text)
-            curr_label.grid(column=1, row=7+i)
-            dollar_labels.append(curr_label)
+                curr_label.config(text=label_text)
+                curr_label.grid(column=1, row=7 + i)
+                dollar_labels.append(curr_label)
 
-        close_p_label = Label(text=" = $" + '{0:,.2f}'.format(close_p_average, 2), fg=font_color,
-                              background=background_color)
-        close_p_label.grid(column=1, row=13)
+            close_p_label = Label(text=" = $" + '{0:,.2f}'.format(close_p_average, 2), fg=font_color,
+                                  background=background_color)
+            close_p_label.grid(column=1, row=13)
 
 
 
@@ -316,13 +320,12 @@ class CASAgui:
 
         #  Report will create all charts and graphs and organize them in a pdf file
         # ==============================================================================
-
+        # TODO Most of this is hardcoded in, anyway to make more flexible?
         # Plot figure with subplots of different sizes
         fig = plt.figure(1)
         # set up subplot grid
         gridspec.GridSpec(3, 4)
         print("report")
-
         # create bins for histogram based on data entered
         num_of_bins = 10
         price_step = max(close_p) / num_of_bins
@@ -351,7 +354,11 @@ class CASAgui:
                  label={'', "Calcuated Appraisal Value"})
         plt.xticks(price_bins, price_bins_label)
         plt.legend()
+        # plt.savefig('plot1.jpg') #  remove or supress this
 
+
+        # ----subplot for ACRES
+        #fig= plt.figure(2)
         # again going to "prettify" this data to be resolved to either multiples of .1 or .25 of an acre
         num_of_acre_bins = 10
         acre_step_divide = max(acres) / num_of_acre_bins
@@ -374,7 +381,7 @@ class CASAgui:
             acre_bins.append(acre_step * i)
             i = i + 1
 
-        print(acre_bins)
+        #print(acre_bins)
         ## small subplot 1
         plt.subplot2grid((3, 4), (0, 2), colspan=2)
         # plt.locator_params(axis='x', nbins=5)
@@ -384,6 +391,7 @@ class CASAgui:
         plt.ylabel('Properties')
         plt.hist(acres, bins=acre_bins, color='b')
         plt.xticks(acre_bins)
+        #plt.savefig('plot2.jpg') # remove this/ supress
 
         ## Setup for GLA Distribution
         square_feet_step = max(square_feet) / 10.0
@@ -395,6 +403,7 @@ class CASAgui:
             i = i + 1
 
         # GLA PLOT--------------------
+        #fig = plt.figure(3)
         plt.subplot2grid((3, 4), (1, 2), colspan=2)
         # plt.locator_params(axis='x', nbins=5)
         # plt.locator_params(axis='y', nbins=5)
@@ -403,6 +412,9 @@ class CASAgui:
         plt.ylabel('Properties')
         plt.hist(square_feet, bins=square_feet_bins, color='r')
         plt.xticks(square_feet_bins)
+        #plt.savefig('plot3.jpg')  #  remove or supress this
+
+
 
         ## Setup data for  AGE DISTRB plot
         age_step = max(age) / 10.0
@@ -419,6 +431,7 @@ class CASAgui:
 
 
         ## AgeDistrub plot
+        #fig = plt.figure(4)
         plt.subplot2grid((3, 4), (2, 2), colspan=2)
         # plt.locator_params(axis='x', nbins=5)
         # plt.locator_params(axis='y', nbins=5)
@@ -427,19 +440,21 @@ class CASAgui:
         plt.ylabel('Properties')
         plt.hist(age, bins=age_bins, color='g')
         plt.xticks(age_bins)
+        #plt.savefig('plot4.jpg')  # TODO remove or supress this
+
 
         ## Show figure
         fig.tight_layout()
-        fig.set_size_inches(w=16, h=8.5)  # this portable? Need to make window
+        fig.set_size_inches(w=11, h=8.5)  # this portable? Need to make window
         # big so the text converts to pdf on a good scale
-        # TODO make this portable/ not harcoded
-
+        # These numbers were arrived at by trial and error, definitely not best solution
+        # TODO make this portable/ not hardcoded
 
         # Make full screen so text prints to pdf in right format
         # mng = plt.get_current_fig_manager()
         # mng.window.state('zoomed')
 
-        # Slap inside TK so we can add a "make pdf button
+        #Slap inside TK so we can add a "make pdf button
         figRoot = tkinter.Tk()
         figRoot.wm_title("Figures for X")  # TODO fix X
         canvas = FigureCanvasTkAgg(fig, master=figRoot)
@@ -461,11 +476,26 @@ class CASAgui:
 def save2pdf(figure, button):
     # this method is used for saving figures to 1 page pdf form.
     # inputs are the root of all the figures and the button used for saving
-    pdfname = asksaveasfilename(filetypes=[('PDF', '*.pdf')])
+    #
+    # This function accomplishes by the following steps
+    # 1.) Save figure as a png
+    # 2.) Populates html template with image and data
+    # 3.) converts html to pdf
+
+
+    pdf_name = asksaveasfilename(filetypes=[('PDF', '*.pdf')])
     # check if error or cancel button, if canceled returns empty string.Empty strings are falsy
-    if not pdfname:
+    if pdf_name:
         # 'if not empty'
-        figure.savefig(pdfname)
+        # 1.) Save fig as png
+        figure.savefig('pdf_build_resources/plots/plot.png')
+
+        # 2.) Populate html template
+        fill_html_template()
+
+        #3 convert html to pdf and save to pdf_name TODO
+
+
         button.config(text='Sucess!')  # just to stop people (aileen from saving like 100 copies
         # if there wasn't an error the next line should execute (I believe) therefore if it
         # executes it means it was a success
@@ -499,6 +529,25 @@ def save2pdf(figure, button):
 # ==============================================================================
 
 
+def fill_html_template():
+    # function is used to populate the html template used to generate pdfs
+    # ----open and read template'
+
+    file_template = open('pdf_build_resources/template.html',
+                         "r")  # opens file with name of "test.txt" # TODO will this work on windows?
+    html_template = Template(file_template.read())
+    file_template.close()
+
+    # ------ load figures names
+    plot_list = os.listdir('pdf_build_resources/plots')  # this was used for when inserting multiple pictures
+
+    # -------- map variables
+    context = {'plot_list': plot_list}
+
+    # ------write to file
+    file_rendered = open('pdf_build_resources/rendered.html', 'w')
+    file_rendered.write(html_template.render(context))
+    file_rendered.close()
 
 
 
