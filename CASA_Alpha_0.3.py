@@ -44,10 +44,12 @@ border_color = "green"
 # Predefined global variables
 # ==============================================================================
 file_import = ""
-price_factors_names= ['Garage', 'Bathrooms', 'Bedrooms', 'Acres', 'Square Feet', 'Fireplaces'] #these are the variables
+price_factors_names = ['Garages', 'Bathrooms', 'Bedrooms', 'Acres', 'Square Feet',
+                       'Fireplaces']  # these are the variables
 #we care about. This will function as an "index" for our weighted values. ie.) weighted_factors[0] corresponds to the
 #weighted value of the Garage is in position 0
-price_factor_untis=['', '', '', 'acres', 'sqft', '']
+price_factor_units = ['', '', '', 'acres', 'sqft', '']  # units for above factors
+
 weights_factors = np.zeros(price_factors_names.__len__())
 # weighted_close_p = 0 # TODO what the hell are these used for ?    Turns out nothing
 weighted_total =  np.sum(weights_factors)
@@ -63,6 +65,7 @@ year_built = []
 age = []
 
 
+
 # ==============================================================================
 # Main class with _init_ function. when program is run:
 # root = Tk()
@@ -76,30 +79,34 @@ age = []
 # adds button widget called "file" asking you to choose a file
 # ==============================================================================
 class CASAgui:
-    def __init__(self, master):
+    def __init__(self):
 
         # Configure master root pane
-        self.master = master  # need to use self to use as an instance variable, otherwise scope of variable only local
+        self.master = Tk()  # need to use self to use as an instance variable, otherwise scope of variable only local
         # to  __init__ functions
-        master.title(version)
-        master.geometry("550x600+300+200")
-        master.config(background=background_color)
-        master.grid_columnconfigure(0, weight=1)
-        master.grid_columnconfigure(1, weight=1)
-        master.grid_columnconfigure(2, weight=1)
-        master.grid_columnconfigure(3, weight=1)
-        master.grid_columnconfigure(4, weight=1)
-        self.title_label = Label(master, text="CASA, THE FUTURE OF REAL ESTATE", font=(font, 20, "bold italic"),
+        self.master.title(version)
+        self.master.geometry("800x1000+300+200")  # size + location
+        self.master.config(background=background_color)
+        self.master.grid_columnconfigure(0, weight=1)
+        self.master.grid_columnconfigure(1, weight=1)  # make input boxes smaller
+        self.master.grid_columnconfigure(2, weight=1)
+        self.master.grid_columnconfigure(3, weight=1)
+        self.master.grid_columnconfigure(4, weight=1)
+        self.title_label = Label(self.master, text="CASA, THE FUTURE OF REAL ESTATE", font=(font, 20, "bold italic"),
                                  fg=font_color, background=background_color)
         self.title_label.grid(columnspan=5, row=0)
-        self.label = Label(master, text="Please choose a CSV file to analyse", background=background_color,
+        self.label = Label(self.master, text="Please choose a CSV file to analyse", background=background_color,
                            fg=font_color)
         self.label.grid(columnspan=5, row=1)
-        self.csv_button = Button(master, text="File", command=self.file_choose, background=background_color,
+        self.csv_button = Button(self.master, text="File", command=self.file_choose, background=background_color,
                                  highlightbackground=border_color, fg=font_color)
         self.csv_button.grid(columnspan=5, row=2)
-        self.label = Label(master, text=file_import, fg=font_color, background=background_color)
+        self.label = Label(self.master, text=file_import, fg=font_color, background=background_color)
         self.label.grid(columnspan=5, row=4)
+        print('gridsize')
+        print(self.master.grid_size())
+        self.pie_chart = PieChart()
+        self.master.mainloop()
 
     # ==============================================================================
 
@@ -123,7 +130,7 @@ class CASAgui:
         # Adding label to clarify what the scales are used for
         self.labelScales = Label(self.master, text="Choose parameter weighting:", fg=font_color,
                                  background=background_color, font=("Helvetica", 17))
-        self.labelScales.grid(column=0, row=6)
+        self.labelScales.grid(column=2, row=6, columnspan=2)
 
         #------Slider Construction---------
 
@@ -135,74 +142,110 @@ class CASAgui:
         slider_config={'orient':"horizontal", 'from_': 0, 'to': 10, 'background': background_color,
                 'highlightbackground': border_color, 'fg': font_color,
                 'troughcolor': trough_color}
-
+        # get current # of rows
+        grid_size = self.master.grid_size()
+        curr_num_rows = grid_size[1]
         for i in range(0, price_factors_names.__len__()):
             # iterate through each slider
             curr_scale=tkinter.Scale(**slider_config)
             #command_wrapped=partial(self.print_value,curr_scale) # used to feed parameters to print command
             #  partials dont work here try lambda function ^
             curr_scale.config(label=price_factors_names[i],
-                              command=lambda value, scale=curr_scale:self.print_value(value,scale))
+                              command=lambda value, scale=curr_scale: self.print_value(value, scale))
             # wacky lambda function, essential lmabda function is just a temporary function without a name
             # used it above as a "go-between" to print_val, that way the assigned command (the lambda function)
             # is only taking one input which satisfies what tkinter.Scale() wants to spit into the command
-            curr_scale.grid(column=0, row=7+i, sticky=E + W) # start at column 7
+            curr_scale.grid(column=2, row=curr_num_rows + i, sticky=E + W, columnspan=2)  # start at column 7
 
+            # ----Also make  labels and input boxes for attributes of the property being appraised
+            curr_label = Label(fg=font_color, background=background_color)
+            label_text = "# of " + price_factors_names[i]
+            curr_label.config(text=label_text)
+            curr_label.grid(column=0, row=curr_num_rows + i)
+            # ---set up input boxes------
+            curr_entry = Entry(fg=font_color, background='gray11', width=12)
+            curr_entry.grid(column=1, row=curr_num_rows + i, columnspan=1)
 
-
-
-
-
-
-    def anaylse(self):
+    def generate_pichart(self):
         # ==============================================================================
         # When "analyse" button is clicked, takes data gathered from sliding scales
         # and shows user percent break down in an easy to interperet pie chart
         # =============================================================================
-        tkinter.report = Button(text="Generate Report", command=self.report, background=background_color,
-                                highlightbackground=border_color, fg=font_color)
-        tkinter.report.grid(column=5, row=13)
 
-        self.master.geometry("900x650+300+200")  # resize window size
-        matplotlib.rcParams[
-            'text.color'] = font_color  # changes global defaults for text colors for matplotlib, only in this function. only way i knnow to change pie chart label colors
+        # check if piechart has already been created
+
+        if self.pie_chart.span:  # pie chart exists if its span has been defined
+            # if the pie chart already exists, clear axis, redraw
+            self.pie_chart.ax.clear()
+            matplotlib.rcParams[
+                'text.color'] = font_color
+
+            labels = price_factors_names
+            values = weights_factors
+            explode = list()
+            for k in labels:
+                explode.append(0.1)
+            patches, texts, autotexts = self.pie_chart.ax.pie(values, labels=labels, explode=explode, shadow=True,
+                                                              autopct='%1.1f%%',
+                                                              colors=("r", "b", "c", "m", "y", "g", "w", "0.75"))
+            for t in autotexts:  # sets autopct color to white (percentages inside of wedges) http://matplotlib.org/examples/pylab_examples/pie_demo2.html
+                t.set_color('black')
+
+            self.pie_chart.canvas.draw()
+            matplotlib.rcParams['text.color'] = 'black'
 
 
-        # TODO Check if figure already exists, if so , delete figure/ canvas to speed up/ stop layering
 
+        else:
+            # if a piechart doesn't exist create a new one
+            matplotlib.rcParams[
+                'text.color'] = font_color  # changes global defaults for text colors for matplotlib,
+            # only in this function. only way i knnow to change pie chart label colors
+            f = Figure(figsize=(5, 5), facecolor=background_color)
+            a = f.add_subplot(111)
 
-        f = Figure(figsize=(5, 5), facecolor=background_color)
-        a = f.add_subplot(111)
+            f.text(0.5, 0.97, "Attributes Weighted", style='italic', horizontalalignment='center',
+                   verticalalignment='top',
+                   fontdict=None, fontsize=22, color=font_color)
+            labels = price_factors_names
+            values = weights_factors
+            # where/ when are these actually calculated
+            # Weights are automatically stored when slider is moved
+            explode = list()
+            for k in labels:
+                explode.append(0.1)
+            patches, texts, autotexts = a.pie(values, labels=labels, explode=explode, shadow=True, autopct='%1.1f%%',
+                                              colors=("r", "b", "c", "m", "y", "g", "w", "0.75"))
+            for t in autotexts:  # sets autopct color to white (percentages inside of wedges) http://matplotlib.org/examples/pylab_examples/pie_demo2.html
+                t.set_color('black')
+            grid_size = self.master.grid_size()
+            curr_num_rows = grid_size[1]
+            canvas = FigureCanvasTkAgg(f, master=self.master)
 
-        f.text(0.5, 0.97, "Attributes Weighted", style='italic', horizontalalignment='center', verticalalignment='top',
-               fontdict=None, fontsize=22, color=font_color)
-        labels = price_factors_names# TODO Another temporary fix
-        #labels = ["Garage", "Bathrooms", "Bedrooms", "Acres", "Square feet", "Fireplaces"]
-        #values = [weighted_garage, weighted_bath, weighted_bedrooms, weighted_acres, weighted_square_feet,
-        #         weighted_fireplaces]
-        values=weights_factors; #TODO this is just temporary fix, theis variable "values is not needed
-        # where/ when are these actually calculated
-        # Weights are automatically stored when slider is moved
-        explode = list()
+            self.pie_chart.figure = f  # store for access outside this method
+            self.pie_chart.span = 5
+            self.pie_chart.row = curr_num_rows + 2
+            self.pie_chart.column = curr_num_rows + 2
+            self.pie_chart.canvas = canvas
+            self.pie_chart.ax = a
+            canvas.get_tk_widget().grid(column=0,
+                                        row=curr_num_rows + 2, columnspan=5,
+                                        rowspan=5, sticky=N + E + S + W)  # start 2 rows after sliders and labels end
+            canvas.show()
 
-        for k in labels:
-            explode.append(0.1)
+            grid_size = self.master.grid_size()
+            curr_num_rows = grid_size[1]
+            tkinter.report = Button(text="Generate Report", command=self.report, background=background_color,
+                                    highlightbackground=border_color, fg=font_color)
+            tkinter.report.grid(column=4, row=curr_num_rows)
 
-        patches, texts, autotexts = a.pie(values, labels=labels, explode=explode, shadow=True, autopct='%1.1f%%',
-                                          colors=("r", "b", "c", "m", "y", "g", "w", "0.75"))
+            matplotlib.rcParams['text.color'] = 'black'
 
-        for t in autotexts:  # sets autopct color to white (percentages inside of wedges) http://matplotlib.org/examples/pylab_examples/pie_demo2.html
-            t.set_color('black')
-        # a.legend(pie[0], labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-
-        canvas = FigureCanvasTkAgg(f, master=root)
-        canvas.get_tk_widget().grid(column=2, row=7, columnspan=3, rowspan=6, sticky=N + E + S + W)
-        canvas.show()
-
-        matplotlib.rcParams['text.color'] = 'black'
+    def anaylse(self):
+        self.generate_pichart()
 
         ################################testin#########################################
-        weighted_total =  sum(weights_factors)
+        weighted_total = sum(weights_factors)
         csv_f = pd.read_csv(file_import)
 
         close_p_dirty = np.array(csv_f["Closed Price"])
@@ -279,7 +322,7 @@ class CASAgui:
             # only calculate labels if they have been moved
             for i in range(0, weights_factors.__len__()):
                 curr_label = Label(fg=font_color, background=background_color)
-                unit = price_factor_untis[i]
+                unit = price_factor_units[i]
 
                 if unit:
                     # if units exist print them
@@ -290,13 +333,13 @@ class CASAgui:
                     label_text = " = $" + '{0:,.2f}'.format((weightedCalc(good_data[i], weights_factors[i])), 2)
 
                 curr_label.config(text=label_text)
-                curr_label.grid(column=1, row=7 + i)
+                curr_label.grid(column=4, row=7 + i)
                 dollar_labels.append(curr_label)
 
             close_p_label = Label(text=" = $" + '{0:,.2f}'.format(close_p_average, 2), fg=font_color,
                                   background=background_color)
-            close_p_label.grid(column=1, row=13)
-
+            close_p_label.grid(column=4, row=13)
+            #TODO display weighted average
 
 
     def print_value(self, val, slider):
@@ -309,7 +352,7 @@ class CASAgui:
         param_name = slider.cget('label') # get name of varibale tbe attached slider is changing
         param_index = price_factors_names.index(param_name) #find what index corresponds to this particular var
         weights_factors[param_index]= int(val)
-        self.anaylse()#TODO let's see if this badboy works
+        self.anaylse()
 
 
 
@@ -550,13 +593,14 @@ def fill_html_template():
     file_rendered.close()
 
 
+class PieChart:
+    def __init__(self):
+        self.row = ''
+        self.canvas = ''
+        self.figure = ''
+        self.column = ''
+        self.span = ''
+        self.ax = ''
 
 
-
-
-
-
-
-root = Tk()
-my_gui = CASAgui(root)
-root.mainloop()
+my_gui = CASAgui()
