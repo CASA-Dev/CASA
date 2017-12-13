@@ -18,6 +18,7 @@ import tkinter
 from tkinter import Tk
 import matplotlib
 import os
+import pdfkit
 from jinja2 import Template
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -79,6 +80,10 @@ age = []
 # adds button widget called "file" asking you to choose a file
 # ==============================================================================
 class CASAgui:
+    class TestClass:
+        def __init__(self):
+            self.k = border_color
+
     def __init__(self):
 
         # Configure master root pane
@@ -105,7 +110,8 @@ class CASAgui:
         self.label.grid(columnspan=5, row=4)
         print('gridsize')
         print(self.master.grid_size())
-        self.pie_chart = PieChart()
+        self.pie_chart = None
+        self.input_entries = []
         self.master.mainloop()
 
     # ==============================================================================
@@ -165,6 +171,7 @@ class CASAgui:
             # ---set up input boxes------
             curr_entry = Entry(fg=font_color, background='gray11', width=12)
             curr_entry.grid(column=1, row=curr_num_rows + i, columnspan=1)
+            self.input_entries.append(curr_entry)
 
     def generate_pichart(self):
         # ==============================================================================
@@ -174,64 +181,19 @@ class CASAgui:
 
         # check if piechart has already been created
 
-        if self.pie_chart.span:  # pie chart exists if its span has been defined
+        if self.pie_chart:  # pie chart exists if its span has been defined
             # if the pie chart already exists, clear axis, redraw
-            self.pie_chart.ax.clear()
-            matplotlib.rcParams[
-                'text.color'] = font_color
-
-            labels = price_factors_names
-            values = weights_factors
-            explode = list()
-            for k in labels:
-                explode.append(0.1)
-            patches, texts, autotexts = self.pie_chart.ax.pie(values, labels=labels, explode=explode, shadow=True,
-                                                              autopct='%1.1f%%',
-                                                              colors=("r", "b", "c", "m", "y", "g", "w", "0.75"))
-            for t in autotexts:  # sets autopct color to white (percentages inside of wedges) http://matplotlib.org/examples/pylab_examples/pie_demo2.html
-                t.set_color('black')
-
-            self.pie_chart.canvas.draw()
-            matplotlib.rcParams['text.color'] = 'black'
+            self.pie_chart.redraw()
 
 
 
-        else:
-            # if a piechart doesn't exist create a new one
-            matplotlib.rcParams[
-                'text.color'] = font_color  # changes global defaults for text colors for matplotlib,
-            # only in this function. only way i knnow to change pie chart label colors
-            f = Figure(figsize=(5, 5), facecolor=background_color)
-            a = f.add_subplot(111)
 
-            f.text(0.5, 0.97, "Attributes Weighted", style='italic', horizontalalignment='center',
-                   verticalalignment='top',
-                   fontdict=None, fontsize=22, color=font_color)
-            labels = price_factors_names
-            values = weights_factors
-            # where/ when are these actually calculated
-            # Weights are automatically stored when slider is moved
-            explode = list()
-            for k in labels:
-                explode.append(0.1)
-            patches, texts, autotexts = a.pie(values, labels=labels, explode=explode, shadow=True, autopct='%1.1f%%',
-                                              colors=("r", "b", "c", "m", "y", "g", "w", "0.75"))
-            for t in autotexts:  # sets autopct color to white (percentages inside of wedges) http://matplotlib.org/examples/pylab_examples/pie_demo2.html
-                t.set_color('black')
-            grid_size = self.master.grid_size()
-            curr_num_rows = grid_size[1]
-            canvas = FigureCanvasTkAgg(f, master=self.master)
+        else:  # Create chart and button
 
-            self.pie_chart.figure = f  # store for access outside this method
-            self.pie_chart.span = 5
-            self.pie_chart.row = curr_num_rows + 2
-            self.pie_chart.column = curr_num_rows + 2
-            self.pie_chart.canvas = canvas
-            self.pie_chart.ax = a
-            canvas.get_tk_widget().grid(column=0,
-                                        row=curr_num_rows + 2, columnspan=5,
-                                        rowspan=5, sticky=N + E + S + W)  # start 2 rows after sliders and labels end
-            canvas.show()
+            self.pie_chart = PieChart(self.master)
+            self.pie_chart.draw()
+
+            # add button
 
             grid_size = self.master.grid_size()
             curr_num_rows = grid_size[1]
@@ -242,6 +204,8 @@ class CASAgui:
             matplotlib.rcParams['text.color'] = 'black'
 
     def anaylse(self):
+        # Calculates each factors price, generates a piechart , and calculates estimated appraisal price based on inputs
+
         self.generate_pichart()
 
         ################################testin#########################################
@@ -340,7 +304,35 @@ class CASAgui:
                                   background=background_color)
             close_p_label.grid(column=4, row=13)
             #TODO display weighted average
+            appraisal_attributes = self.read_input_entries()
+            if appraisal_attributes.all():
+                # calculate "estimated price"
+                print('esitmated price here')
+            else:
+                # tell user that their a mess and they need to get their shit together....summer
+                print('get your shit together, put in numbersS')
 
+    def read_input_entries(self):
+        # converts entries to doubles, then outputs values in a np.array
+        # outputs empty np.array
+        entry_num = []
+        flag = 0;
+        for entry in self.input_entries:
+            curr_string = entry.get()
+            # get rid of commas
+            curr_string = curr_string.replace(',', '')
+            if curr_string.isdigit():
+                # convert to double'
+                entry_num.append(float(curr_string))
+            else:
+                flag = 1
+
+        if flag == 1:
+            # return empty array
+            return np.array([])
+        else:
+            # convert to np array
+            return np.array(entry_num)
 
     def print_value(self, val, slider):
         # ==============================================================================
@@ -516,6 +508,7 @@ class CASAgui:
         # to get correct looking text , set to full screen
 
 
+
 def save2pdf(figure, button):
     # this method is used for saving figures to 1 page pdf form.
     # inputs are the root of all the figures and the button used for saving
@@ -537,7 +530,7 @@ def save2pdf(figure, button):
         fill_html_template()
 
         #3 convert html to pdf and save to pdf_name TODO
-
+        pdfkit.from_file('pdf_build_resources/rendered.html', pdf_name)
 
         button.config(text='Sucess!')  # just to stop people (aileen from saving like 100 copies
         # if there wasn't an error the next line should execute (I believe) therefore if it
@@ -594,13 +587,92 @@ def fill_html_template():
 
 
 class PieChart:
-    def __init__(self):
-        self.row = ''
-        self.canvas = ''
-        self.figure = ''
-        self.column = ''
-        self.span = ''
-        self.ax = ''
+    def __init__(self, master):
+        self.row = None
+        self.figure = None
+        self.ax = None
+        self.canvas = None
+        self.values = weights_factors
+        self.column = 0  # start on left most column and span page
+        self.span, garbage = master.grid_size()  # num of columns to span
+        self.master = master
+        self.labels = price_factors_names
+
+    def draw(self):
+        # if a piechart doesn't exist create a new one
+        matplotlib.rcParams[
+            'text.color'] = font_color  # changes global defaults for text colors for matplotlib,
+        # only in this function. only way i knnow to change pie chart label colors #TODO
+
+        f = Figure(figsize=(5, 5), facecolor=background_color)
+        self.figure = f
+
+        a = f.add_subplot(111)
+        self.ax = a
+
+        f.text(0.5, 0.97, "Attributes Weighted", style='italic', horizontalalignment='center',
+               verticalalignment='top',
+               fontdict=None, fontsize=22, color=font_color)  # font_color is module scoped variable
+        labels = self.labels.copy()
+        explode = list()
+        for k in range(0, price_factors_names.__len__()):
+            explode.append(0.1)
+            # don't show names of variables not weighted
+            if weights_factors[k] < .01:
+                # == 0 but factoring in for some rounding
+                labels[k] = ''
+
+        patches, texts, autotexts = self.ax.pie(self.values, labels=labels, explode=explode, shadow=True,
+                                                autopct='%1.1f%%',
+                                                colors=("r", "b", "c", "m", "y", "g", "w", "0.75"))
+        for t in autotexts:  # sets autopct color to white (percentages inside of wedges)
+            # http://matplotlib.org/examples/pylab_examples/pie_demo2.html
+            t.set_color('black')
+
+        self.canvas = FigureCanvasTkAgg(f, master=self.master)
+
+        self.figure = f  # store for access outside this method
+        cols, master_rows = self.master.grid_size()
+        self.row = master_rows + 2
+
+        self.ax = a
+        self.canvas.get_tk_widget().grid(column=0,
+                                         row=self.row, columnspan=self.span,
+                                         rowspan=self.span, sticky=N + E + S + W)
+        # start 2 rows after sliders and labels end
+
+        self.canvas.show()
+        matplotlib.rcParams['text.color'] = 'black'
+
+    def redraw(self):
+        self.values = weights_factors  # updates values, not necessary due to how python points to lists but included
+        # for clarity
+        self.ax.clear()
+        matplotlib.rcParams[
+            'text.color'] = font_color
+        labels = self.labels.copy()
+        explode = list()
+        for k in range(0, price_factors_names.__len__()):
+            explode.append(0.1)
+            # don't show names of variables not weighted
+            if weights_factors[k] < .01:
+                # == 0 but factoring in for some rounding
+                labels[k] = ''
+
+        patches, texts, autotexts = self.ax.pie(self.values, labels=labels, explode=explode, shadow=True,
+                                                autopct='%1.1f%%',
+                                                colors=("r", "b", "c", "m", "y", "g", "w", "0.75"))
+        for t in autotexts:  # sets autopct color to white (percentages inside of wedges) http://matplotlib.org/examples/pylab_examples/pie_demo2.html
+            t.set_color('black')
+
+        self.canvas.draw()
+        matplotlib.rcParams['text.color'] = 'black'
+
+    def __bool__(self):
+
+        return bool(self.canvas)  # returns true if canvas exists
+
+
 
 
 my_gui = CASAgui()
