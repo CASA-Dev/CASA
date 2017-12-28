@@ -37,9 +37,9 @@ from functools import partial  # used for binding commands to buttons with param
 # ==============================================================================
 background_color = "black"
 font = "Helvetica"
-font_color = "green"
-trough_color = "green"
-border_color = "green"
+font_color = "red"
+trough_color = "red"
+border_color = "red"
 
 # ==============================================================================
 # Predefined global variables
