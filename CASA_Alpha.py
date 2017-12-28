@@ -40,6 +40,7 @@ font = "Helvetica"
 font_color = "green"
 trough_color = "green"
 border_color = "green"
+#tet
 
 # ==============================================================================
 # Predefined global variables
