@@ -37,9 +37,9 @@ from functools import partial  # used for binding commands to buttons with param
 # ==============================================================================
 background_color = "black"
 font = "Helvetica"
-font_color = "green"
-trough_color = "green"
-border_color = "green"
+font_color = "red"
+trough_color = "red"
+border_color = "red"
 #tet
 
 # ==============================================================================
@@ -178,7 +178,7 @@ class CASAgui:
     def generate_pichart(self):
         # ==============================================================================
         # When "analyse" button is clicked, takes data gathered from sliding scales
-        # and shows user percent break down in an easy to interperet pie chart
+        # and shows user percent break down in an easy to interpret pie chart
         # =============================================================================
 
         # check if piechart has already been created
@@ -395,7 +395,7 @@ class CASAgui:
         calculatedAppraisalPrice = self.estimated_price
         plt.hist([close_p, calculatedAppraisalPrice], bins=price_bins, stacked=True, color=["gray", "red"],
                  label={'', "Calcuated Appraisal Value"})
-        plt.xticks(price_bins, price_bins_label)
+        plt.xticks(price_bins, price_bins_label, rotation=45)
         plt.legend()
         # plt.savefig('plot1.jpg') #  remove or supress this
 
@@ -433,7 +433,7 @@ class CASAgui:
         plt.xlabel('Acres')
         plt.ylabel('Properties')
         plt.hist(acres, bins=acre_bins, color='b')
-        plt.xticks(acre_bins)
+        plt.xticks(acre_bins, rotation=45)
         #plt.savefig('plot2.jpg') # remove this/ supress
 
         ## Setup for GLA Distribution
@@ -454,7 +454,7 @@ class CASAgui:
         plt.xlabel('GLA')
         plt.ylabel('Properties')
         plt.hist(square_feet, bins=square_feet_bins, color='r')
-        plt.xticks(square_feet_bins)
+        plt.xticks(square_feet_bins, rotation=45)
         #plt.savefig('plot3.jpg')  #  remove or supress this
 
 
@@ -482,11 +482,12 @@ class CASAgui:
         plt.xlabel('Age')
         plt.ylabel('Properties')
         plt.hist(age, bins=age_bins, color='g')
-        plt.xticks(age_bins)
+        plt.xticks(age_bins, rotation=45)
         #plt.savefig('plot4.jpg')  # TODO remove or supress this
 
 
         ## Show figure
+        #fig.autofmt_xdate()
         fig.tight_layout()
         fig.set_size_inches(w=11, h=8.5)  # this portable? Need to make window
         # big so the text converts to pdf on a good scale
