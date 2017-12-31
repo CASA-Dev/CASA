@@ -618,20 +618,25 @@ def calc_r_squared(actual_price_comps, estimate_price_comps):
 def numerical_jacobian(function, x):
     # This function calculates the Jacobian of function using finite differences
     # kinda cool but it looks like you can input functions as arguments in python, kinda trippy
-
+    # TODO add **kawargs for more control ?
     delta_x = min(x) * .1 + .1 * int(min(x) == 0)  # defining delta x so it can never be 0
     f_0 = function(x)
 
     cols = x.__len__()
-    rows = f_0.__len__()
+    if is_number(f_0):
+        # if scalar
+        rows = 1
+    else:
+        rows = f_0.__len__()
+
     jacobian = np.zeros((rows, cols))
     for i in range(0, cols):
-        delta_x = x[i] * .5 + .05 * int(x[i] == 0)  # define delta_x relatively, make sure its not equal to zero
-        x_n = x
+        delta_x = x[i] * .0001 + .0001 * int(x[i] == 0)  # define delta_x relatively, make sure its not equal to zero
+        # TODO is there a better way to define delta ?
+        x_n = x.copy()  # otherwise points to the same part of memory and changes x
         x_n[i] = x[i] + delta_x  # perturb
         f_n = function(x_n)
         jacobian[:, i] = (f_n - f_0) / (delta_x)  # replace the column
-        # TODO test this bad boy
     return jacobian
 
 
@@ -639,6 +644,47 @@ def my_fun(x, compdata):
     # This function is the derivative of how ¨close¨ our data is to our best fit hyper plane, finding the root this will
     # help us find the extrema , and ultimately help us create a best fit plane ie.) linear regression analysis
     f_x = None  # TODO finish this puppy
+
+
+def newton_solver(fun, guess, **kwargs):
+    # This is a newton solver, used to find roots of a function
+    # Use kwargs to maybe introduce configuration options for the solver ie.) tolerneces
+    # step size, convergence criteria
+    # ONLY WORKs FOR SQUARE,INVERTIBLE JACOBIANS
+    # define convergence criteria and exit criteria
+
+    num_of_steps = 0
+    max_num_of_steps = 100  #
+    epsilon_max = .01  # how close to root should we aim for ?, we will use vector norm to determine how
+    # "close" we are
+    x = guess
+    f_x = fun(x)  # initial value
+    epsilon = np.linalg.norm(x)
+
+    # ouput message and configure output
+    output_message = ''
+    error_flag = False
+    converged = True
+
+    # start the solver
+    while num_of_steps < max_num_of_steps and epsilon > epsilon_max:
+        # if error, raise error flag and break from loop
+        jacobian = numerical_jacobian(fun, x)
+        x = x - np.linalg.inv(jacobian).dot(fun(x))  # get next x
+        epsilon = np.linalg.norm(fun(x))  # see how close next point is to 0 vector
+
+    # now figure out if it ran correctly and what to return
+
+    if error_flag == True:
+        # ouput ERROR and the type of error that happened
+        output_message = "Error"
+        converged = False
+    if num_of_steps >= max_num_of_steps and np.linalg.norm(x) > epsilon:
+        # if never converged
+        output_message = "Exceed max number of steps"
+        converged = False
+
+    return [converged, output_message, x, epsilon]
 
 
 def estimate_price(property_attributes, weights):
@@ -660,10 +706,13 @@ def calc_weights(comp_attribute_list, slider_weight, total_slider_weight, close_
 
 
 def is_number(s):
+    # this function tests if the input string is a number
     try:
         float(s)
         return True
     except ValueError:
+        return False
+    except TypeError:
         return False
 
 class PieChart:
@@ -725,7 +774,8 @@ class PieChart:
         matplotlib.rcParams['text.color'] = 'black'
 
     def redraw(self):
-        self.values = slider_weights_factors  # updates values, not necessary due to how python points to lists but included
+        self.values = slider_weights_factors  # updates values, not necessary due to how python points to lists but
+        # included
         # for clarity
         self.ax.clear()
         matplotlib.rcParams[
@@ -752,7 +802,3 @@ class PieChart:
 
         return bool(self.canvas)  # returns true if canvas exists
 
-
-
-
-my_gui = CASAgui()
